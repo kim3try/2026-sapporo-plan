@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 삿포로 5박 6일 겨울 여행 플래너</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Stone, Amber, Sky) -->
+    <!-- Application Structure Plan: A single-page application featuring a top navigation bar for task-oriented access to key sections (Overview, Planning, Itineraries, Activities, Food, Safety). This non-linear structure enhances usability by allowing users to jump to specific information. The 'Overview' section includes an interactive budget comparison chart for immediate data synthesis. Other sections utilize filters, toggles, and accordions to present detailed information in a digestible, user-controlled manner, improving exploration and reducing cognitive load. -->
+    <!-- Visualization & Content Choices: 1. Budget Data -> Goal: Compare -> Viz: Donut Chart -> Interaction: Toggle between two itinerary budgets, updating the chart and summary text -> Justification: Provides a clear, immediate visual comparison of cost structures -> Library: Chart.js. 2. Accommodation/Restaurant Lists -> Goal: Organize -> Viz: Card-based grid -> Interaction: Category filtering -> Justification: Enables users to quickly narrow down options based on their preferences -> Library: Vanilla JS. 3. Itinerary Details -> Goal: Organize -> Viz: Tabbed interface with daily accordions -> Interaction: Switch between plans, expand/collapse days -> Justification: Manages complexity by showing only one plan and one day at a time. All items now include external links for further exploration. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+            color: #374151; /* gray-700 */
+        }
+        .nav-link {
+            transition: all 0.3s ease-in-out;
+        }
+        .nav-link.active {
+            color: #f59e0b; /* amber-500 */
+            border-bottom-color: #f59e0b;
+        }
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .content-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+                max-height: 400px;
+            }
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/90 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-2xl md:text-3xl font-bold text-sky-800">❄️ 삿포로 여행 플래너</h1>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#overview" class="nav-link text-lg font-medium border-b-2 border-transparent hover:text-amber-500">개요</a>
+                    <a href="#planning" class="nav-link text-lg font-medium border-b-2 border-transparent hover:text-amber-500">항공/숙소</a>
+                    <a href="#itinerary" class="nav-link text-lg font-medium border-b-2 border-transparent hover:text-amber-500">추천 일정</a>
+                    <a href="#activities" class="nav-link text-lg font-medium border-b-2 border-transparent hover:text-amber-500">즐길 거리</a>
+                    <a href="#food" class="nav-link text-lg font-medium border-b-2 border-transparent hover:text-amber-500">맛집</a>
+                    <a href="#safety" class="nav-link text-lg font-medium border-b-2 border-transparent hover:text-amber-500">안전 정보</a>
+                </nav>
+                <button id="mobile-menu-button" class="md:hidden p-2 text-gray-600">
+                    <span class="menu-icon-bar block w-6 h-0.5 bg-gray-600 transition-transform"></span>
+                    <span class="menu-icon-bar block w-6 h-0.5 bg-gray-600 mt-1.5 transition-transform"></span>
+                    <span class="menu-icon-bar block w-6 h-0.5 bg-gray-600 mt-1.5 transition-transform"></span>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <a href="#overview" class="block text-center py-3 text-lg font-medium nav-link hover:bg-stone-100">개요</a>
+            <a href="#planning" class="block text-center py-3 text-lg font-medium nav-link hover:bg-stone-100">항공/숙소</a>
+            <a href="#itinerary" class="block text-center py-3 text-lg font-medium nav-link hover:bg-stone-100">추천 일정</a>
+            <a href="#activities" class="block text-center py-3 text-lg font-medium nav-link hover:bg-stone-100">즐길 거리</a>
+            <a href="#food" class="block text-center py-3 text-lg font-medium nav-link hover:bg-stone-100">맛집</a>
+            <a href="#safety" class="block text-center py-3 text-lg font-medium nav-link hover:bg-stone-100">안전 정보</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        <section id="overview" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4 text-gray-800">5박 6일 삿포로, 눈꽃과 미식 여행</h2>
+                <p class="text-lg text-stone-600 max-w-3xl mx-auto">
+                    삿포로 눈 축제 직전, 가장 아름다운 설경을 여유롭게 즐길 수 있는 완벽한 겨울 여행을 계획해보세요. 이 플래너는 항공권부터 일정, 맛집, 안전 수칙까지 성공적인 나홀로 여행을 위한 모든 정보를 담고 있습니다.
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-2xl font-bold text-center mb-6 text-gray-800">여행 스타일별 예상 경비 비교</h3>
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button id="budget-btn-1" class="budget-btn active bg-amber-500 text-white font-bold py-2 px-6 rounded-full transition">옵션 1: 핵심 코스</button>
+                    <button id="budget-btn-2" class="budget-btn bg-stone-200 text-stone-600 font-bold py-2 px-6 rounded-full transition">옵션 2: 여유 코스</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="chart-container">
+                        <canvas id="budgetChart"></canvas>
+                    </div>
+                    <div>
+                        <h4 id="budget-title" class="text-2xl font-bold text-sky-800 mb-4">옵션 1: 삿포로, 오타루, 비에이/후라노 핵심 코스</h4>
+                        <p id="budget-desc" class="text-stone-600 mb-4">삿포로 시내와 근교의 모든 핵심 명소를 방문하여 홋카이도 겨울의 정수를 경험하는 종합 코스입니다.</p>
+                        <div class="bg-sky-50 p-4 rounded-lg">
+                            <p class="text-lg font-medium text-gray-700">총 예상 경비 (1인 기준)</p>
+                            <p id="budget-total" class="text-4xl font-bold text-sky-700">약 92 ~ 121만원</p>
+                            <p class="text-sm text-stone-500 mt-1">(항공권 및 개인 소비에 따라 변동 가능)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="planning" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4 text-gray-800">항공권 & 숙소 예약 가이드</h2>
+                <p class="text-lg text-stone-600">알뜰하고 안전한 여행의 시작, 항공권과 숙소 선택의 모든 것을 알려드립니다.</p>
+            </div>
+            
+            <div class="mb-12 bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-3xl font-bold mb-6 text-sky-800">✈️ 항공권 예약 전략</h3>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="bg-sky-50 p-6 rounded-xl">
+                        <p class="text-4xl font-bold text-amber-500 mb-2">D-40</p>
+                        <h4 class="text-xl font-bold mb-2">최적 예약 시점</h4>
+                        <p class="text-stone-600">출발 40일 전이 통계적으로 저렴하지만, 1월은 극성수기이므로 60만원대 가격이 보이면 바로 예약하는 것이 좋습니다.</p>
+                    </div>
+                    <div class="bg-sky-50 p-6 rounded-xl">
+                        <p class="text-4xl font-bold text-amber-500 mb-2">₩60만</p>
+                        <h4 class="text-xl font-bold mb-2">현실적인 목표 가격</h4>
+                        <p class="text-stone-600">성수기에는 70-85만원까지 오를 수 있습니다. 60만원 전후를 기준으로 꾸준히 가격을 모니터링하세요.</p>
+                    </div>
+                    <div class="bg-sky-50 p-6 rounded-xl">
+                        <p class="text-4xl font-bold text-amber-500 mb-2">🔔</p>
+                        <h4 class="text-xl font-bold mb-2">가격 알리미 활용</h4>
+                        <p class="text-stone-600">스카이스캐너 등 가격 비교 사이트의 알리미 기능을 설정하여 가격 변동을 놓치지 마세요.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-3xl font-bold mb-6 text-sky-800">🏨 안전하고 편안한 숙소 찾기</h3>
+                <div class="flex flex-wrap justify-center gap-2 mb-6">
+                    <button class="filter-btn-accommodation active bg-amber-500 text-white py-2 px-4 rounded-full font-semibold" data-filter="all">전체</button>
+                    <button class="filter-btn-accommodation bg-stone-200 text-stone-600 py-2 px-4 rounded-full font-semibold" data-filter="hotel">호텔</button>
+                    <button class="filter-btn-accommodation bg-stone-200 text-stone-600 py-2 px-4 rounded-full font-semibold" data-filter="capsule">캡슐/호스텔</button>
+                    <button class="filter-btn-accommodation bg-stone-200 text-stone-600 py-2 px-4 rounded-full font-semibold" data-filter="women-friendly">여성 추천</button>
+                </div>
+                <div id="accommodation-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            </div>
+        </section>
+
+        <section id="itinerary" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4 text-gray-800">5박 6일 추천 여행 일정</h2>
+                <p class="text-lg text-stone-600">두 가지 스타일의 여행 코스 중 당신에게 맞는 플랜을 선택해보세요.</p>
+            </div>
+            <div class="flex justify-center space-x-4 mb-8">
+                <button id="itinerary-btn-1" class="itinerary-btn active bg-amber-500 text-white font-bold py-3 px-8 rounded-full transition text-lg">옵션 1: 핵심 코스</button>
+                <button id="itinerary-btn-2" class="itinerary-btn bg-stone-200 text-stone-600 font-bold py-3 px-8 rounded-full transition text-lg">옵션 2: 여유 코스</button>
+            </div>
+            <div id="itinerary-content-1" class="itinerary-content">
+            </div>
+            <div id="itinerary-content-2" class="itinerary-content hidden">
+            </div>
+        </section>
+
+        <section id="activities" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4 text-gray-800">포토 스팟 & 즐길 거리</h2>
+                <p class="text-lg text-stone-600">'인생샷'을 남길 수 있는 아름다운 설경 명소와 겨울 액티비티를 소개합니다.</p>
+            </div>
+            <div id="activities-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+        <section id="food" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4 text-gray-800">삿포로 미식 탐방</h2>
+                <p class="text-lg text-stone-600">여행의 즐거움을 더해줄 삿포로의 대표 음식과 현지인 추천 맛집 리스트!</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-2 mb-8">
+                <button class="filter-btn-food active bg-amber-500 text-white py-2 px-4 rounded-full font-semibold" data-filter="all">전체</button>
+                <button class="filter-btn-food bg-stone-200 text-stone-600 py-2 px-4 rounded-full font-semibold" data-filter="징기스칸">징기스칸</button>
+                <button class="filter-btn-food bg-stone-200 text-stone-600 py-2 px-4 rounded-full font-semibold" data-filter="수프카레">수프카레</button>
+                <button class="filter-btn-food bg-stone-200 text-stone-600 py-2 px-4 rounded-full font-semibold" data-filter="라멘">라멘</button>
+                <button class="filter-btn-food bg-stone-200 text-stone-600 py-2 px-4 rounded-full font-semibold" data-filter="해산물">해산물/초밥</button>
+                <button class="filter-btn-food bg-stone-200 text-stone-600 py-2 px-4 rounded-full font-semibold" data-filter="기타">기타</button>
+            </div>
+            <div id="food-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+        </section>
+        
+        <section id="safety" class="content-section">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4 text-gray-800">여행 안전 가이드</h2>
+                <p class="text-lg text-stone-600">안전하고 즐거운 여행을 위한 필수 수칙과 비상시 대처법을 확인하세요.</p>
+            </div>
+            <div id="safety-accordion-container" class="space-y-4 max-w-4xl mx-auto">
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-sky-900 text-white mt-12">
+        <div class="container mx-auto p-6 text-center text-sm">
+            <p>&copy; 2025 Interactive Sapporo Trip Planner. All information based on the provided travel guide.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    
+    const budgetData = {
+        option1: {
+            title: '옵션 1: 삿포로, 오타루, 비에이/후라노 핵심 코스',
+            description: '삿포로 시내와 근교의 모든 핵심 명소를 방문하여 홋카이도 겨울의 정수를 경험하는 종합 코스입니다.',
+            total: '약 92 ~ 121만원',
+            labels: ['항공권', '숙소', '식비', '교통/관광', '투어'],
+            data: [500000, 200000, 180000, 48000, 90000],
+        },
+        option2: {
+            title: '옵션 2: 삿포로 & 근교 여유 코스',
+            description: '삿포로 시내를 깊이 탐방하고, 근교는 오타루 또는 비에이/후라노 중 한 곳을 선택하여 여유를 즐기는 코스입니다.',
+            total: '약 88만 ~ 113만원',
+            labels: ['항공권', '숙소', '식비', '교통/관광', '투어(선택)'],
+            data: [500000, 200000, 180000, 48000, 42500],
+        }
+    };
+
+    const accommodationData = [
+        { name: '카락사 호텔 삿포로', type: '호텔', price: '₩103,147~', features: '도심 접근성, 깔끔함', filter: 'hotel', link: 'https://karaksahotels.com/sapporo/' },
+        { name: '티마크 시티 호텔 삿포로', type: '호텔', price: '₩130,000~', features: '가성비, 스스키노 위치', filter: 'hotel', link: 'https://sapporo.tmark-hotel.com/' },
+        { name: 'City Cabin Susukino', type: '캡슐호텔', price: '₩70,000~ (성수기)', features: '남녀 분리, 개별 샤워실', filter: 'capsule,women-friendly', link: 'https://citycabin.jp/' },
+        { name: '헬리오 호스텔 삿포로', type: '호스텔', price: '문의', features: '여성 전용 층/샤워실, 보안 우수', filter: 'capsule,women-friendly', link: 'http://helio-hostel.jp/en/' },
+        { name: '언탭드 호스텔', type: '호스텔', price: '문의', features: '여성 전용 도미토리룸', filter: 'capsule,women-friendly', link: 'https://untapped.jp/' },
+        { name: '호텔 포트뭄', type: '호텔/도미토리', price: '문의', features: '여성 전용 룸, 방음 우수', filter: 'hotel,capsule,women-friendly', link: 'https://hotelpotmum.com/' },
+        { name: '그리즈 삿포로', type: '호텔/도미토리', price: '문의', features: '여성 전용 도미토리, 역 접근성', filter: 'hotel,capsule,women-friendly', link: 'https://grids-hostel.com/' },
+        { name: '타임 피스 아파트먼트', type: '아파트먼트', price: '문의', features: '여성 전용 도미토리/샤워실', filter: 'capsule,women-friendly', link: 'https://www.timepeace-sapporo.com/' },
+    ];
+
+    const itineraryData = {
+        option1: [
+            { day: '1일차 (일)', title: '삿포로 도착 & 스스키노 야경', details: '공항 도착 → 삿포로역 이동 후 숙소 체크인 → <a href="https://www.google.com/maps/search/?api=1&query=징기스칸" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">스스키노</a>에서 징기스칸 또는 수프카레로 저녁 식사 → <a href="https://www.google.com/maps/place/ニッカウヰスキー+ニッカ+ビル+札幌/data=!4m7!3m6!1s0x5f0b299e5a1b376d:0x937c043e06cf8431!8m2!3d43.0560938!4d141.3537233!16s%2Fg%2F122c4l0y?hl=ko&gl=US" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">니카상</a> 인증샷' },
+            { day: '2일차 (월)', title: '삿포로 시내 눈 풍경 & 미식', details: '<a href="https://odori-park.or.jp/en/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">오도리 공원</a> & <a href="https://www.sapporo-tower.co.jp/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">TV타워 전망대</a> → 삿포로 라멘 맛집에서 점심 → <a href="https://moerenumapark.jp/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">모에레누마 공원</a> → <a href="https://www.sushihanamaru.com/store/details/stellaplace.html" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">네무로 하나마루 회전초밥</a>' },
+            { day: '3일차 (화)', title: '오타루 당일치기', details: 'JR로 <a href="https://otaru.gr.jp/en/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">오타루</a> 이동 → 오타루 운하, 오르골당, 유리 공예점 탐방 → 카이센동 점심 → <a href="https://www.letao.jp/shop/main.php" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">르타오 본점</a> 디저트 → 삿포로 복귀' },
+            { day: '4일차 (수)', title: '비에이/후라노 눈꽃 투어', details: '삿포로 출발 당일치기 버스 투어 참여 (청의 호수, 흰 수염 폭포, 닝구르테라스 등). 안전과 효율을 위해 강력 추천!' },
+            { day: '5일차 (목)', title: '삿포로 심화 탐방 & 휴식', details: '<a href="https://www.shiroikoibitopark.jp/en/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">시로이 코이비토 파크</a> 또는 <a href="https://www.hokudai.ac.jp/en/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">홋카이도 대학 캠퍼스</a> 산책 → <a href="https://donguri-bakery.com/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">동구리 베이커리</a>에서 점심 → 여유로운 카페에서 휴식' },
+            { day: '6일차 (금)', title: '쇼핑 & 출국', details: '삿포로역 또는 <a href="http://www.tanukikoji.or.jp/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">다누키코지 상점가</a> 쇼핑 → 신치토세 공항으로 이동 → 공항에서 점심 식사 후 출국' }
+        ],
+        option2: [
+            { day: '1일차 (일)', title: '삿포로 도착 & 스스키노 야경', details: '공항 도착 → 삿포로역 이동 후 숙소 체크인 → <a href="https://www.google.com/maps/search/?api=1&query=징기스칸" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">스스키노</a>에서 징기스칸 또는 수프카레로 저녁 식사 → <a href="https://www.google.com/maps/place/ニッカウヰスキー+ニッカ+ビル+札幌/data=!4m7!3m6!1s0x5f0b299e5a1b376d:0x937c043e06cf8431!8m2!3d43.0560938!4d141.3537233!16s%2Fg%2F122c4l0y?hl=ko&gl=US" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">니카상</a> 인증샷' },
+            { day: '2일차 (월)', title: '삿포로 시내 눈 풍경 & 미식', details: '<a href="https://odori-park.or.jp/en/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">오도리 공원</a> & <a href="https://www.sapporo-tower.co.jp/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">TV타워 전망대</a> → 삿포로 라멘 맛집에서 점심 → <a href="https://moerenumapark.jp/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">모에레누마 공원</a> → <a href="https://www.sushihanamaru.com/store/details/stellaplace.html" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">네무로 하나마루 회전초밥</a>' },
+            { day: '3일차 (화)', title: '근교 선택: 오타루 or 비에이/후라노', details: '옵션 A: <a href="https://otaru.gr.jp/en/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">오타루</a> 당일치기 (운하, 상점가, 디저트) / 옵션 B: 비에이/후라노 당일치기 버스 투어 (설경 집중)' },
+            { day: '4일차 (수)', title: '삿포로 시내 심화 탐방 & 여유', details: '삿포로 예술의 숲, 홋카이도 박물관 등 관심사 탐방 또는 <a href="https://jozankei.jp/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">조잔케이 온천</a> 방문으로 휴식' },
+            { day: '5일차 (목)', title: '삿포로 심화 탐방 & 휴식', details: '<a href="https://www.shiroikoibitopark.jp/en/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">시로이 코이비토 파크</a> 또는 <a href="https://www.hokudai.ac.jp/en/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">홋카이도 대학 캠퍼스</a> 산책 → <a href="https://donguri-bakery.com/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">동구리 베이커리</a>에서 점심 → 여유로운 카페에서 휴식' },
+            { day: '6일차 (금)', title: '쇼핑 & 출국', details: '삿포로역 또는 <a href="http://www.tanukikoji.or.jp/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">다누키코지 상점가</a> 쇼핑 → 신치토세 공항으로 이동 → 공항에서 점심 식사 후 출국' }
+        ]
+    };
+
+    const activitiesData = [
+        { name: '오도리 공원', category: '삿포로 시내', desc: '삿포로 눈 축제의 메인 회장. TV 타워를 배경으로 멋진 사진을 남길 수 있습니다.', link: 'https://odori-park.or.jp/en/' },
+        { name: '모이와 산 전망대', category: '삿포로 시내', desc: '홋카이도 3대 야경 명소. 로프웨이를 타고 올라가 파노라마 설경과 야경을 감상하세요.', link: 'https://moiwa.jp/en/' },
+        { name: '시로이 코이비토 파크', category: '삿포로 시내', desc: '환상적인 일루미네이션으로 유명한 과자 테마파크. 동화 같은 분위기를 연출합니다.', link: 'https://www.shiroikoibitopark.jp/en/' },
+        { name: '비에이 청의 호수 & 흰 수염 폭포', category: '근교 투어', desc: '신비로운 푸른 빛의 호수와 겨울 수빙 현상이 절경인 폭포. 버스 투어로 방문하는 것을 추천합니다.', link: 'https://biei-hokkaido.jp/ja/sightseeing/shirogane-blue-pond/' },
+        { name: '후라노 닝구르테라스', category: '근교 투어', desc: '숲속의 요정 마을 같은 통나무 상점가. 저녁에 조명이 켜지면 더욱 몽환적입니다.', link: 'https://www.princehotels.com/newfurano/resort/ningle-terrace/' },
+        { name: '호헤이쿄 온천', category: '액티비티', desc: '산으로 둘러싸인 노천탕에서 눈을 맞으며 온천을 즐기는 특별한 경험을 할 수 있습니다.', link: 'https://hoheikyo.co.jp/' },
+    ];
+
+    const foodData = [
+        { name: '징기스칸 다루마', type: '징기스칸', desc: '삿포로 대표 징기스칸 맛집. 잡내 없는 양고기와 특제 소스가 일품. 웨이팅 필수.', filter: '징기스칸', link: 'http://best.miru.so/daruma/' },
+        { name: '삿포로 맥주원', type: '징기스칸', desc: '삿포로 맥주와 함께 징기스칸을 즐길 수 있는 곳. 레트로한 건물이 인상적.', filter: '징기스칸', link: 'https://www.sapporo-bier-garten.jp/' },
+        { name: '수프 카레 가라쿠', type: '수프카레', desc: '현지인과 관광객 모두에게 사랑받는 1위 맛집. 깊고 진한 국물 맛이 특징.', filter: '수프카레', link: 'http://www.spicegoraku.com/' },
+        { name: '스아게+', type: '수프카레', desc: '한국인에게 가장 유명한 곳. 큼직한 튀김 채소와 닭꼬치가 인기 메뉴.', filter: '수프카레', link: 'https://www.suage.info/' },
+        { name: '멘야 유키카제', type: '라멘', desc: '진한 국물의 미소라멘이 유명한 곳. 두툼하고 부드러운 차슈가 인상적.', filter: '라멘', link: 'https://tabelog.com/hokkaido/A0101/A010103/1005872/' },
+        { name: '새우라멘 이치겐', type: '라멘', desc: '진한 새우향이 가득한 독특한 라멘. 공항에도 있지만 본점 맛이 월등하다는 평.', filter: '라멘', link: 'https://tabelog.com/hokkaido/A0101/A010103/1029193/' },
+        { name: '네무로 하나마루', type: '해산물/초밥', desc: '가성비 최고의 회전초밥집. 신선하고 두툼한 네타가 올라간 초밥을 맛볼 수 있다.', filter: '해산물', link: 'https://www.sushihanamaru.com/' },
+        { name: '삿포로 동구리 베이커리', type: '기타', desc: '저렴하고 맛있는 현지인 빵집. 명물인 치쿠와빵은 꼭 먹어봐야 할 메뉴.', filter: '기타', link: 'https://donguri-bakery.com/' },
+        { name: '세이코마트', type: '기타', desc: '홋카이도 대표 편의점. 저렴하고 퀄리티 좋은 도시락과 디저트로 식비를 절약할 수 있다.', filter: '기타', link: 'https://www.seicomart.co.jp/' },
+    ];
+
+    const safetyData = [
+        { title: '기본 안전 수칙', content: '밤늦은 시간 혼자 다니는 것을 피하고, 인적이 드문 곳은 가지 않는 것이 좋습니다. 낯선 사람의 과도한 친절은 경계하고, 불안함을 느낄 땐 직감을 믿고 즉시 그 상황에서 벗어나는 것이 중요합니다.' },
+        { title: '필수 준비물', content: '미끄럼 방지 기능이 있는 방수 신발은 필수입니다. 추위에 배터리가 빨리 닳으니 보조배터리를 항상 휴대하세요. 핫팩, 방한용품(모자, 장갑, 목도리)도 잊지 마세요.' },
+        { title: '비상 연락처 및 앱', content: '경찰(110), JNTO 콜센터(050-3816-2787) 번호를 저장해두세요. 외교부 해외안전여행 앱과 일본 재해 정보 앱(Safety tips)을 미리 설치하면 위급 상황 시 도움이 됩니다.' },
+        { title: '숙소 안전', content: '숙소 예약 전, 보안 시설과 잠금장치, 층간 소음 후기 등을 꼼꼼히 확인하여 안전하고 편안한 곳을 선택하는 것이 좋습니다.' }
+    ];
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    const contentSections = document.querySelectorAll('.content-section');
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    function updateActiveNav(targetId) {
+        navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === `#${targetId}`);
+        });
+        contentSections.forEach(section => {
+            section.classList.toggle('active', section.id === targetId);
+        });
+    }
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+            updateActiveNav(targetId);
+            if (!mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+                mobileMenuButton.classList.remove('is-active');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        mobileMenuButton.classList.toggle('is-active');
+    });
+
+    const ctx = document.getElementById('budgetChart').getContext('2d');
+    let budgetChart;
+
+    function createBudgetChart(data) {
+        if (budgetChart) {
+            budgetChart.destroy();
+        }
+        budgetChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.data,
+                    backgroundColor: ['#0284c7', '#38bdf8', '#7dd3fc', '#f59e0b', '#fcd34d'],
+                    borderColor: '#ffffff',
+                    borderWidth: 4,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: { size: 14, family: "'Noto Sans KR', sans-serif" }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.label}: ${new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(context.parsed)}`
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    function updateBudgetInfo(option) {
+        document.getElementById('budget-title').textContent = option.title;
+        document.getElementById('budget-desc').textContent = option.description;
+        document.getElementById('budget-total').textContent = option.total;
+        createBudgetChart(option);
+    }
+
+    document.querySelectorAll('.budget-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.budget-btn').forEach(b => b.classList.replace('bg-amber-500', 'bg-stone-200') || b.classList.replace('text-white', 'text-stone-600'));
+            btn.classList.replace('bg-stone-200', 'bg-amber-500');
+            btn.classList.replace('text-stone-600', 'text-white');
+            updateBudgetInfo(budgetData[btn.id === 'budget-btn-1' ? 'option1' : 'option2']);
+        });
+    });
+
+    function renderList(containerId, data, renderer) {
+        document.getElementById(containerId).innerHTML = data.map(renderer).join('');
+    }
+
+    renderList('accommodation-list', accommodationData, item => `
+        <div class="accommodation-item bg-white rounded-xl shadow-md overflow-hidden transition hover:shadow-xl hover:-translate-y-1" data-filter="${item.filter}">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs uppercase tracking-wide font-semibold text-amber-500">${item.type}</p>
+                        <h4 class="text-xl font-bold mt-1 text-gray-800"><a href="${item.link}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.name}</a></h4>
+                    </div>
+                    <p class="text-lg font-bold text-sky-700 whitespace-nowrap">${item.price}</p>
+                </div>
+                <p class="mt-2 text-stone-600">${item.features}</p>
+            </div>
+        </div>
+    `);
+
+    document.querySelectorAll('.filter-btn-accommodation').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const filter = e.target.dataset.filter;
+            document.querySelectorAll('.filter-btn-accommodation').forEach(btn => btn.classList.replace('bg-amber-500', 'bg-stone-200') || btn.classList.replace('text-white', 'text-stone-600'));
+            e.target.classList.replace('bg-stone-200', 'bg-amber-500');
+            e.target.classList.replace('text-stone-600', 'text-white');
+            document.querySelectorAll('.accommodation-item').forEach(item => {
+                item.style.display = (filter === 'all' || item.dataset.filter.includes(filter)) ? 'block' : 'none';
+            });
+        });
+    });
+
+    function renderItinerary(optionKey, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = `<div class="space-y-4 max-w-3xl mx-auto">
+            ${itineraryData[optionKey].map(day => `
+                <div class="bg-white p-5 rounded-lg shadow-md">
+                    <h4 class="text-xl font-bold text-sky-800">${day.day}: <span class="font-semibold text-stone-700">${day.title}</span></h4>
+                    <p class="mt-2 text-stone-600">${day.details}</p>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+
+    document.querySelectorAll('.itinerary-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.itinerary-btn').forEach(b => b.classList.replace('bg-amber-500', 'bg-stone-200') || b.classList.replace('text-white', 'text-stone-600'));
+            btn.classList.replace('bg-stone-200', 'bg-amber-500');
+            btn.classList.replace('text-stone-600', 'text-white');
+            document.querySelectorAll('.itinerary-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(btn.id === 'itinerary-btn-1' ? 'itinerary-content-1' : 'itinerary-content-2').classList.remove('hidden');
+        });
+    });
+
+    renderList('activities-list', activitiesData, item => `
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-sky-600 text-white p-4">
+                <h4 class="text-xl font-bold"><a href="${item.link}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.name}</a></h4>
+                <p class="text-sm font-medium opacity-80">${item.category}</p>
+            </div>
+            <div class="p-6"><p class="text-stone-600">${item.desc}</p></div>
+        </div>
+    `);
+
+    renderList('food-list', foodData, item => `
+        <div class="food-item bg-white rounded-xl shadow-md overflow-hidden transition hover:shadow-xl hover:-translate-y-1" data-filter="${item.filter}">
+            <div class="p-6">
+                 <p class="text-xs uppercase tracking-wide font-semibold text-amber-500">${item.type}</p>
+                <h4 class="text-xl font-bold mt-1 text-gray-800"><a href="${item.link}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.name}</a></h4>
+                <p class="mt-2 text-stone-600">${item.desc}</p>
+            </div>
+        </div>
+    `);
+
+    document.querySelectorAll('.filter-btn-food').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const filter = e.target.dataset.filter;
+            document.querySelectorAll('.filter-btn-food').forEach(btn => btn.classList.replace('bg-amber-500', 'bg-stone-200') || btn.classList.replace('text-white', 'text-stone-600'));
+            e.target.classList.replace('bg-stone-200', 'bg-amber-500');
+            e.target.classList.replace('text-stone-600', 'text-white');
+            document.querySelectorAll('.food-item').forEach(item => {
+                item.style.display = (filter === 'all' || item.dataset.filter.includes(filter)) ? 'block' : 'none';
+            });
+        });
+    });
+
+    renderList('safety-accordion-container', safetyData, item => `
+        <div class="bg-white rounded-lg shadow-md">
+            <button class="accordion-header w-full flex justify-between items-center p-5 text-left font-bold text-lg text-sky-800">
+                <span>${item.title}</span>
+                <span class="accordion-icon transform transition-transform text-amber-500">▼</span>
+            </button>
+            <div class="accordion-content px-5"><div class="py-4 border-t"><p class="text-stone-600">${item.content}</p></div></div>
+        </div>
+    `);
+
+    document.querySelectorAll('.accordion-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.accordion-icon');
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                icon.classList.remove('rotate-180');
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.classList.add('rotate-180');
+            }
+        });
+    });
+
+    function initializeApp() {
+        updateActiveNav('overview');
+        updateBudgetInfo(budgetData.option1);
+        renderItinerary('option1', 'itinerary-content-1');
+        renderItinerary('option2', 'itinerary-content-2');
+    }
+
+    initializeApp();
+});
+</script>
+
+</body>
+</html>
